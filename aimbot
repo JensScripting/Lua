@@ -1,0 +1,103 @@
+-- SERVICES AND VARIABLES
+local Players = game:GetService('Players')
+local Client = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local RunService = game:GetService('RunService')
+local UIS = game:GetService('UserInputService')
+local TweenService = game:GetService('TweenService')
+local Holding = false
+
+-- AIMBOT SETTINGS
+getgenv().AimbotEnabled = true
+getgenv().TeamCheck = true
+getgenv().AimPart = 'Head'
+getgenv().Sensitivity = 0
+
+-- FOV CIRCLE SETTINGS
+getgenv().CircleVisible = true
+getgenv().CircleTransparency = 0.2
+getgenv().CircleColor = Color3.fromRGB(255, 255, 255)
+getgenv().CircleFilled = false
+getgenv().CircleRadius = 80
+getgenv().CircleSides = 64
+getgenv().CircleThickness = 0
+
+local FOVCircle = Drawing.new('Circle')
+FOVCircle.Position = Vector2.new(Camera.ViewportSize.Y / 2, Camera.ViewportSize.X / 2)
+FOVCircle.Radius = CircleRadius
+FOVCircle.Filled = CircleFilled
+FOVCircle.Color = CircleColor
+FOVCircle.Visible = CircleVisible
+FOVCircle.Radius = CircleRadius
+FOVCircle.Transparency = CircleTransparency
+FOVCircle.NumSides = CircleSides
+FOVCircle.Thickness = CircleThickness
+
+local function getClosest()
+    local MaxDistance = CircleRadius
+    local Target = nil
+
+    for _, v in next, Players:GetPlayers() do
+        if v.Name ~= Client.Name then
+            if TeamCheck then
+                if v.Team ~= Client.Team then
+                    if v.Character ~= nil then
+                        if v.Character:FindFirstChild('HumanoidRootPart') ~= nil then
+                            if v.Character:FindFirstChild('Humanoid') ~= nil and v.Character:FindFirstChild('Humanoid').Health ~= 0 then
+                                local ScreenPoint = Camera:WorldToScreenPoint(v.Character:WaitForChild('HumanoidRootPart', math.huge).Position)
+                                local VectorDistance = (Vector2.new(UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+
+                                if VectorDistance < MaxDistance then
+                                    Target = v
+                                end
+                            end
+                        end
+                    end
+                end
+            else
+                if v.Character ~= nil then
+                    if v.Character:FindFirstChild('HumanoidRootPart') ~= nil then
+                        if v.Character:FindFirstChild('Humanoid') ~= nil and v.Character:FindFirstChild('Humanoid').Health ~= 0 then
+                            local ScreenPoint = Camera:WorldToScreenPoint(v.Character:WaitForChild('HumanoidRootPart', math.huge).Position)
+                            local VectorDistance = (Vector2.new(UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y) - Vector2.new(ScreenPoint.X, ScreenPoint.Y)).Magnitude
+
+                            if VectorDistance < MaxDistance then
+                                Target = v
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return Target
+end
+
+UIS.InputBegan:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+        Holding = true
+    end
+end)
+
+UIS.InputEnded:Connect(function(Input)
+    if Input.UserInputType == Enum.UserInputType.MouseButton2 then
+        Holding = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = Vector2.new(UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y)
+    FOVCircle.Radius = CircleRadius
+    FOVCircle.Filled = CircleFilled
+    FOVCircle.Color = CircleColor
+    FOVCircle.Visible = CircleVisible
+    FOVCircle.Radius = CircleRadius
+    FOVCircle.Transparency = CircleTransparency
+    FOVCircle.NumSides = CircleSides
+    FOVCircle.Thickness = CircleThickness
+
+    if Holding  and AimbotEnabled then
+        local Tween = TweenService:Create(Camera, TweenInfo.new(Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame = CFrame.new(Camera.CFrame.Position, getClosest().Character[AimPart].Position)})
+        Tween:Play()
+    end
+end)
